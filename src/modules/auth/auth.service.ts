@@ -11,6 +11,8 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { TokenResponseDto } from './dto/token-response.dto';
 import { TokenPayload } from './interfaces/token-payload.interface';
+import { JwtSignOptions } from '@nestjs/jwt';
+import { StringValue } from 'ms';
 
 @Injectable()
 export class AuthService {
@@ -152,10 +154,12 @@ export class AuthService {
       device_type,
     };
 
-    return this.jwtService.sign(payload, {
+    const options: JwtSignOptions = {
       secret: process.env.ACCESS_TOKEN_KEY,
       expiresIn: expiresIn,
-    } as any);
+    };
+
+    return this.jwtService.sign(payload, options);
   }
 
   private generaterefresh_token(
@@ -172,16 +176,18 @@ export class AuthService {
     };
 
     return this.jwtService.sign(payload, {
-      secret: process.env.REFRESH_TOKEN_KEY,
+      secret: process.env.REFRESH_TOKEN_KEY as string,
       expiresIn: '30d',
-    } as any);
+    });
   }
 
-  private getaccess_tokenExpiry(device_type: string): string {
-    if (device_type === 'MOBILE') {
-      return process.env.ACCESS_TOKEN_AGE_MOBILE || '1d';
-    }
-    return process.env.ACCESS_TOKEN_AGE_WEB || '10m';
+  private getaccess_tokenExpiry(device_type: string): StringValue {
+    const value =
+      device_type === 'MOBILE'
+        ? process.env.ACCESS_TOKEN_AGE_MOBILE || '1d'
+        : process.env.ACCESS_TOKEN_AGE_WEB || '10m';
+
+    return value as StringValue;
   }
 
   private getaccess_tokenExpirySeconds(device_type: string): number {
