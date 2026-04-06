@@ -1,12 +1,12 @@
 export class TokenResponseDto {
   access_token: string;
   refresh_token: string;
-  expiresIn: number;
+  expires_in: number;
   token_type = 'Bearer';
 
-  constructor(access_token: string, refresh_token: string, expiresIn: number) {
+  constructor(access_token: string, refresh_token: string, expires_in: number) {
     this.access_token = access_token;
     this.refresh_token = refresh_token;
-    this.expiresIn = expiresIn;
+    this.expires_in = expires_in;
   }
 }
