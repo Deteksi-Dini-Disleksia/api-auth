@@ -18,9 +18,9 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "migrate:create": "node-pg-migrate create",
-    "migrate:up": "node-pg-migrate up",
-    "migrate:down": "node-pg-migrate down"
+    "migrate:create": "node-pg-migrate create --migrations-table pgmigrations_auth",
+    "migrate:up": "node-pg-migrate up --migrations-table pgmigrations_auth",
+    "migrate:down": "node-pg-migrate down --migrations-table pgmigrations_auth"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
