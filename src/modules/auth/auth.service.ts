@@ -85,28 +85,21 @@ export class AuthService {
     return new TokenResponseDto(access_token, refresh_token, expiresIn);
   }
 
-  async refresh_token(
-    user_id: number,
-    device_type: string,
-    refresh_token: string,
-  ): Promise<TokenResponseDto> {
-    const stored = await this.authRepository.getToken(user_id, device_type);
-    if (!stored || stored.token !== refresh_token) {
+  async refresh_token(refresh_token: string): Promise<TokenResponseDto> {
+    let payload: TokenPayload;
+
+    try {
+      payload = this.jwtService.verify<TokenPayload>(refresh_token, {
+        secret: process.env.REFRESH_TOKEN_KEY,
+      });
+    } catch {
       throw new UnauthorizedException('Refresh token is invalid or expired');
     }
 
-    try {
-      const payload = this.jwtService.verify<TokenPayload>(refresh_token, {
-        secret: process.env.REFRESH_TOKEN_KEY,
-      });
+    const { sub: user_id, device_type } = payload;
 
-      if (payload.sub !== user_id) {
-        throw new UnauthorizedException('Refresh token is invalid');
-      }
-    } catch (error) {
-      if (error instanceof UnauthorizedException) {
-        throw error;
-      }
+    const stored = await this.authRepository.getToken(user_id, device_type);
+    if (!stored || stored.token !== refresh_token) {
       throw new UnauthorizedException('Refresh token is invalid or expired');
     }
 

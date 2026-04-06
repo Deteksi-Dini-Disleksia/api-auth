@@ -24,16 +24,10 @@ export class AuthController {
   async refresh(
     @Body()
     body: {
-      user_id: number;
-      device_type: string;
       refresh_token: string;
     },
   ) {
-    const tokens = await this.authService.refresh_token(
-      body.user_id,
-      body.device_type,
-      body.refresh_token,
-    );
+    const tokens = await this.authService.refresh_token(body.refresh_token);
     return ApiResponseUtil.success(tokens, 'Token refreshed successfully');
   }
 }
