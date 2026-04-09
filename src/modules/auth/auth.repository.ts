@@ -35,7 +35,10 @@ export class AuthRepository {
     }
   }
 
-  async getToken(user_id: number, device_type: string): Promise<ApiToken | null> {
+  async getToken(
+    user_id: number,
+    device_type: string,
+  ): Promise<ApiToken | null> {
     try {
       const result = await this.db.query(
         'SELECT * FROM api_tokens WHERE user_id = $1 AND device_type = $2',

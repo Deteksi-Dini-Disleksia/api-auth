@@ -10,19 +10,19 @@ export class RegisterDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
-  username: string;
+  username!: string;
 
   @IsString()
   @IsNotEmpty()
   @MinLength(6)
   @MaxLength(255)
-  password: string;
+  password!: string;
 
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  fullname: string;
+  fullname!: string;
 
   @IsEnum(['ADMIN', 'GURU'])
-  role: string;
+  role!: string;
 }

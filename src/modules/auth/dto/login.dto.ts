@@ -3,12 +3,12 @@ import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
 export class LoginDto {
   @IsString()
   @IsNotEmpty()
-  username: string;
+  username!: string;
 
   @IsString()
   @IsNotEmpty()
-  password: string;
+  password!: string;
 
   @IsEnum(['MOBILE', 'WEB'])
-  device_type: string;
+  device_type!: string;
 }
