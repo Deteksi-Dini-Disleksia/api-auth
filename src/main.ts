@@ -9,6 +9,8 @@ dotenv.config();
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
 
+  app.enableCors();
+
   app.useGlobalFilters(new HttpExceptionFilter());
 
   app.useGlobalPipes(
