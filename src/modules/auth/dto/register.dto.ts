@@ -1,4 +1,5 @@
 import {
+  IsEmail,
   IsEnum,
   IsNotEmpty,
   IsString,
@@ -7,7 +8,7 @@ import {
 } from 'class-validator';
 
 export class RegisterDto {
-  @IsString()
+  @IsEmail({}, { message: 'Username harus berupa email yang valid' })
   @IsNotEmpty()
   @MaxLength(100)
   username!: string;

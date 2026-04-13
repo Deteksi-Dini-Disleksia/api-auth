@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { AuthRepository } from './auth.repository';
-import { UsersModule } from '../users/users.module';
 import { DatabaseService } from '../../shared/database/database.service';
+import { EmailService } from '../../shared/email/email.service';
+import { UsersModule } from '../users/users.module';
+import { AuthController } from './auth.controller';
+import { AuthRepository } from './auth.repository';
+import { AuthService } from './auth.service';
+import { PendingUsersRepository } from './pending-users.repository';
 
 @Module({
   imports: [
@@ -15,6 +17,12 @@ import { DatabaseService } from '../../shared/database/database.service';
     UsersModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuthRepository, DatabaseService],
+  providers: [
+    AuthService,
+    AuthRepository,
+    PendingUsersRepository,
+    DatabaseService,
+    EmailService,
+  ],
 })
 export class AuthModule {}

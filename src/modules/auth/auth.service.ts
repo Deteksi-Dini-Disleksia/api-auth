@@ -3,43 +3,94 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
+import { StringValue } from 'ms';
+import { EmailService } from '../../shared/email/email.service';
 import { UsersService } from '../users/users.service';
 import { AuthRepository } from './auth.repository';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { TokenResponseDto } from './dto/token-response.dto';
 import { TokenPayload } from './interfaces/token-payload.interface';
-import { JwtSignOptions } from '@nestjs/jwt';
-import { StringValue } from 'ms';
+import { PendingUsersRepository } from './pending-users.repository';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly authRepository: AuthRepository,
+    private readonly pendingUsersRepository: PendingUsersRepository,
     private readonly jwtService: JwtService,
+    private readonly emailService: EmailService,
   ) {}
 
-  async register(dto: RegisterDto): Promise<{
+  async register(dto: RegisterDto): Promise<{ message: string }> {
+    const existing = await this.usersService.findByUsername(dto.username);
+    if (existing) {
+      throw new BadRequestException('Email sudah terdaftar');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    await this.pendingUsersRepository.create(
+      dto.username,
+      hashedPassword,
+      dto.fullname,
+      dto.role,
+      verificationToken,
+      expiresAt,
+    );
+
+    await this.emailService.sendVerificationEmail(
+      dto.username,
+      verificationToken,
+      dto.fullname,
+    );
+
+    return {
+      message: 'Registrasi berhasil! Silakan cek email Anda untuk verifikasi.',
+    };
+  }
+
+  async verifyEmail(token: string): Promise<{
     user_id: number;
     username: string;
     fullname: string;
     role: string;
   }> {
-    const existing = await this.usersService.findByUsername(dto.username);
-    if (existing) {
-      throw new BadRequestException('Username already registered');
+    const pending = await this.pendingUsersRepository.findByToken(token);
+    if (!pending) {
+      throw new BadRequestException(
+        'Token verifikasi tidak valid atau sudah digunakan',
+      );
     }
 
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    if (new Date() > new Date(pending.expires_at)) {
+      await this.pendingUsersRepository.deleteByToken(token);
+      throw new BadRequestException(
+        'Token verifikasi sudah kedaluwarsa. Silakan daftar ulang.',
+      );
+    }
+
+    // Check if someone registered the same email via another flow while pending
+    const existing = await this.usersService.findByUsername(pending.username);
+    if (existing) {
+      await this.pendingUsersRepository.deleteByToken(token);
+      throw new BadRequestException('Email sudah terdaftar');
+    }
+
     const user = await this.usersService.create(
-      dto.username,
-      hashedPassword,
-      dto.fullname,
-      dto.role,
+      pending.username,
+      pending.password,
+      pending.fullname,
+      pending.role,
     );
+
+    await this.pendingUsersRepository.deleteByToken(token);
 
     return {
       user_id: user.user_id,
