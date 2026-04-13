@@ -103,12 +103,14 @@ export class AuthService {
   async login(dto: LoginDto): Promise<TokenResponseDto> {
     const user = await this.usersService.findByUsername(dto.username);
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Email belum terdaftar');
     }
 
     const passwordMatch = await bcrypt.compare(dto.password, user.password);
     if (!passwordMatch) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException(
+        'Login gagal! Periksa email dan password Anda',
+      );
     }
 
     const access_token = this.generateaccess_token(
