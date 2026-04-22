@@ -15,11 +15,15 @@ exports.up = (pgm) => {
     password: { type: 'varchar(255)', notNull: true },
     fullname: { type: 'varchar(255)', notNull: true },
     role: { type: 'varchar(10)', notNull: true },
-    created_at: { type: 'timestamp', notNull: true, default: pgm.func('CURRENT_TIMESTAMP') },
+    created_at: {
+      type: 'timestamp',
+      notNull: true,
+      default: pgm.func('CURRENT_TIMESTAMP'),
+    },
   });
 
   pgm.addConstraint('users', 'users_role_check', {
-    check: "(role IN ('ADMIN','GURU'))",
+    check: "(role IN ('ADMIN','TESTER'))",
   });
 };
 

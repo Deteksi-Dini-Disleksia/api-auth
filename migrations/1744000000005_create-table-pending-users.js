@@ -23,7 +23,7 @@ exports.up = (pgm) => {
   });
 
   pgm.addConstraint('pending_users', 'pending_users_role_check', {
-    check: "(role IN ('ADMIN','GURU'))",
+    check: "(role IN ('ADMIN','TESTER'))",
   });
 };
 

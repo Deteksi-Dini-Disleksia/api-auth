@@ -40,7 +40,7 @@ export class AuthService {
       dto.username,
       hashedPassword,
       dto.fullname,
-      dto.role,
+      'ADMIN',
       verificationToken,
       expiresAt,
     );

@@ -1,6 +1,5 @@
 import {
   IsEmail,
-  IsEnum,
   IsNotEmpty,
   IsString,
   MaxLength,
@@ -23,7 +22,4 @@ export class RegisterDto {
   @IsNotEmpty({ message: 'Nama lengkap wajib diisi' })
   @MaxLength(255, { message: 'Nama lengkap maksimal 255 karakter' })
   fullname!: string;
-
-  @IsEnum(['ADMIN', 'GURU'], { message: 'Role harus ADMIN atau GURU' })
-  role!: string;
 }
