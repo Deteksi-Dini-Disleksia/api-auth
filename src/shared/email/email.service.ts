@@ -1,25 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
-import * as dns from 'dns';
-import * as nodemailer from 'nodemailer';
-
-// Force IPv4 DNS resolution — Railway does not support IPv6 outbound connections
-dns.setDefaultResultOrder('ipv4first');
+import { Resend } from 'resend';
 
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private transporter: nodemailer.Transporter;
+  private resend: Resend;
 
   constructor() {
-    this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER || '',
-        pass: process.env.SMTP_PASS || '',
-      },
-    });
+    this.resend = new Resend(process.env.RESEND_API_KEY);
   }
 
   async sendVerificationEmail(
@@ -54,13 +42,19 @@ export class EmailService {
     `;
 
     try {
-      await this.transporter.sendMail({
-        from:
-          process.env.SMTP_FROM || `"Tes Disleksia" <${process.env.SMTP_USER}>`,
+      const from =
+        process.env.RESEND_FROM || 'Tes Disleksia <tes_disleksia@resend.dev>';
+      const { error } = await this.resend.emails.send({
+        from,
         to,
         subject: 'Verifikasi Email — Tes Disleksia',
         html,
       });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
       this.logger.log(`Verification email sent to ${to}`);
     } catch (error) {
       this.logger.error(`Failed to send verification email to ${to}`, error);
