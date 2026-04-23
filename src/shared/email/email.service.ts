@@ -1,5 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
+import * as dns from 'dns';
 import * as nodemailer from 'nodemailer';
+
+// Force IPv4 DNS resolution — Railway does not support IPv6 outbound connections
+dns.setDefaultResultOrder('ipv4first');
 
 @Injectable()
 export class EmailService {
@@ -11,7 +15,6 @@ export class EmailService {
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: Number(process.env.SMTP_PORT) || 587,
       secure: process.env.SMTP_SECURE === 'true',
-      family: 4,
       auth: {
         user: process.env.SMTP_USER || '',
         pass: process.env.SMTP_PASS || '',
