@@ -43,7 +43,7 @@ export class EmailService {
 
     try {
       const from =
-        process.env.RESEND_FROM || 'Tes Disleksia <tes_disleksia@resend.dev>';
+        process.env.RESEND_FROM || 'Tes Disleksia <noreply@tesdisleksia.web.id>';
       const { error } = await this.resend.emails.send({
         from,
         to,
