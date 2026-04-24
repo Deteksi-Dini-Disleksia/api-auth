@@ -5,9 +5,20 @@ import { Resend } from 'resend';
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
   private resend: Resend;
+  private readonly fromAddress: string;
+  private readonly appUrl: string;
 
   constructor() {
+    const requiredEnvVars = ['RESEND_API_KEY', 'RESEND_FROM', 'APP_URL'];
+    for (const key of requiredEnvVars) {
+      if (!process.env[key]) {
+        throw new Error(`Missing required environment variable: ${key}`);
+      }
+    }
+
     this.resend = new Resend(process.env.RESEND_API_KEY);
+    this.fromAddress = process.env.RESEND_FROM!;
+    this.appUrl = process.env.APP_URL!;
   }
 
   async sendVerificationEmail(
@@ -15,8 +26,7 @@ export class EmailService {
     token: string,
     fullname: string,
   ): Promise<void> {
-    const baseUrl = process.env.APP_URL || 'http://localhost:3000';
-    const verifyUrl = `${baseUrl}/auth/verify-email?token=${token}`;
+    const verifyUrl = `${this.appUrl}/auth/verify-email?token=${token}`;
 
     const html = `
       <div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px; background: #ffffff; border-radius: 12px; border: 1px solid #e5e7eb;">
@@ -42,10 +52,8 @@ export class EmailService {
     `;
 
     try {
-      const from =
-        process.env.RESEND_FROM || 'Tes Disleksia <noreply@tesdisleksia.web.id>';
       const { error } = await this.resend.emails.send({
-        from,
+        from: this.fromAddress,
         to,
         subject: 'Verifikasi Email — Tes Disleksia',
         html,

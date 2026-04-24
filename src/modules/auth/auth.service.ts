@@ -18,13 +18,35 @@ import { PendingUsersRepository } from './pending-users.repository';
 
 @Injectable()
 export class AuthService {
+  private readonly accessTokenKey: string;
+  private readonly refreshTokenKey: string;
+  private readonly accessTokenAgeMobile: string;
+  private readonly accessTokenAgeWeb: string;
+
   constructor(
     private readonly usersService: UsersService,
     private readonly authRepository: AuthRepository,
     private readonly pendingUsersRepository: PendingUsersRepository,
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
-  ) {}
+  ) {
+    const requiredEnvVars = [
+      'ACCESS_TOKEN_KEY',
+      'REFRESH_TOKEN_KEY',
+      'ACCESS_TOKEN_AGE_MOBILE',
+      'ACCESS_TOKEN_AGE_WEB',
+    ];
+    for (const key of requiredEnvVars) {
+      if (!process.env[key]) {
+        throw new Error(`Missing required environment variable: ${key}`);
+      }
+    }
+
+    this.accessTokenKey = process.env.ACCESS_TOKEN_KEY!;
+    this.refreshTokenKey = process.env.REFRESH_TOKEN_KEY!;
+    this.accessTokenAgeMobile = process.env.ACCESS_TOKEN_AGE_MOBILE!;
+    this.accessTokenAgeWeb = process.env.ACCESS_TOKEN_AGE_WEB!;
+  }
 
   async register(dto: RegisterDto): Promise<{ message: string }> {
     const existing = await this.usersService.findByUsername(dto.username);
@@ -201,7 +223,7 @@ export class AuthService {
     };
 
     const options: JwtSignOptions = {
-      secret: process.env.ACCESS_TOKEN_KEY,
+      secret: this.accessTokenKey,
       expiresIn: expiresIn,
     };
 
@@ -222,7 +244,7 @@ export class AuthService {
     };
 
     return this.jwtService.sign(payload, {
-      secret: process.env.REFRESH_TOKEN_KEY as string,
+      secret: this.refreshTokenKey,
       expiresIn: '30d',
     });
   }
@@ -230,8 +252,8 @@ export class AuthService {
   private getaccess_tokenExpiry(device_type: string): StringValue {
     const value =
       device_type === 'MOBILE'
-        ? process.env.ACCESS_TOKEN_AGE_MOBILE || '1d'
-        : process.env.ACCESS_TOKEN_AGE_WEB || '10m';
+        ? this.accessTokenAgeMobile
+        : this.accessTokenAgeWeb;
 
     return value as StringValue;
   }

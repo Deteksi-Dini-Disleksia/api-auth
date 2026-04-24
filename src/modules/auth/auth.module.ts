@@ -10,9 +10,18 @@ import { PendingUsersRepository } from './pending-users.repository';
 
 @Module({
   imports: [
-    JwtModule.register({
-      secret: process.env.ACCESS_TOKEN_KEY || 'changeme',
-      signOptions: { expiresIn: '10m' },
+    JwtModule.registerAsync({
+      useFactory: () => {
+        if (!process.env.ACCESS_TOKEN_KEY) {
+          throw new Error(
+            'Missing required environment variable: ACCESS_TOKEN_KEY',
+          );
+        }
+        return {
+          secret: process.env.ACCESS_TOKEN_KEY,
+          signOptions: { expiresIn: '10m' },
+        };
+      },
     }),
     UsersModule,
   ],

@@ -7,7 +7,14 @@ import { RegisterDto } from './dto/register.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  private readonly frontendUrl: string;
+
+  constructor(private readonly authService: AuthService) {
+    if (!process.env.FRONTEND_URL) {
+      throw new Error('Missing required environment variable: FRONTEND_URL');
+    }
+    this.frontendUrl = process.env.FRONTEND_URL;
+  }
 
   @Post('register')
   async register(@Body() dto: RegisterDto) {
@@ -17,13 +24,11 @@ export class AuthController {
 
   @Get('verify-email')
   async verifyEmail(@Query('token') token: string, @Res() res: Response) {
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-
     try {
       await this.authService.verifyEmail(token);
-      res.redirect(`${frontendUrl}/login?verified=true`);
+      res.redirect(`${this.frontendUrl}/login?verified=true`);
     } catch {
-      res.redirect(`${frontendUrl}/login?verified=false`);
+      res.redirect(`${this.frontendUrl}/login?verified=false`);
     }
   }
 
