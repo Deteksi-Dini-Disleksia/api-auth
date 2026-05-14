@@ -1,6 +1,9 @@
 import {
   BadRequestException,
+  HttpException,
+  HttpStatus,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
@@ -10,10 +13,14 @@ import { StringValue } from 'ms';
 import { EmailService } from '../../shared/email/email.service';
 import { UsersService } from '../users/users.service';
 import { AuthRepository } from './auth.repository';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { TokenResponseDto } from './dto/token-response.dto';
 import { TokenPayload } from './interfaces/token-payload.interface';
+import { PasswordResetAttemptsRepository } from './password-reset-attempts.repository';
+import { PasswordResetRepository } from './password-reset.repository';
 import { PendingUsersRepository } from './pending-users.repository';
 
 @Injectable()
@@ -27,6 +34,8 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly authRepository: AuthRepository,
     private readonly pendingUsersRepository: PendingUsersRepository,
+    private readonly passwordResetRepository: PasswordResetRepository,
+    private readonly passwordResetAttemptsRepository: PasswordResetAttemptsRepository,
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
   ) {
@@ -206,6 +215,61 @@ export class AuthService {
 
     const expiresIn = this.getaccess_tokenExpirySeconds(device_type);
     return new TokenResponseDto(access_token, newrefresh_token, expiresIn);
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto): Promise<{ message: string }> {
+    const user = await this.usersService.findByUsername(dto.email);
+    if (!user) {
+      throw new NotFoundException('Email belum terdaftar');
+    }
+
+    const max = this.passwordResetAttemptsRepository.maxAttemptsPerDay;
+    const todayCount = await this.passwordResetAttemptsRepository.getCountToday(
+      dto.email,
+    );
+    if (todayCount >= max) {
+      throw new HttpException(
+        `Batas percobaan reset password (${max}x/hari) telah tercapai. Silakan coba lagi besok.`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await this.passwordResetRepository.create(user.user_id, token, expiresAt);
+    await this.passwordResetAttemptsRepository.increment(dto.email);
+    await this.emailService.sendPasswordResetEmail(
+      user.username,
+      token,
+      user.fullname,
+    );
+
+    return { message: 'Link reset password telah dikirim ke email Anda' };
+  }
+
+  async resetPassword(dto: ResetPasswordDto): Promise<{ message: string }> {
+    const record = await this.passwordResetRepository.findByToken(dto.token);
+    if (!record) {
+      throw new BadRequestException(
+        'Token reset password tidak valid atau sudah digunakan',
+      );
+    }
+
+    if (new Date() > new Date(record.expires_at)) {
+      await this.passwordResetRepository.deleteByToken(dto.token);
+      throw new BadRequestException(
+        'Token reset password sudah kedaluwarsa. Silakan minta link baru.',
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.new_password, 10);
+    await this.usersService.updatePassword(record.user_id, hashedPassword);
+    await this.passwordResetRepository.deleteByToken(dto.token);
+
+    return {
+      message: 'Password berhasil diubah. Silakan login dengan password baru.',
+    };
   }
 
   private generateaccess_token(

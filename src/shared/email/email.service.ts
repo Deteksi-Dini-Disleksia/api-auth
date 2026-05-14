@@ -21,6 +21,55 @@ export class EmailService {
     this.appUrl = process.env.APP_URL!;
   }
 
+  async sendPasswordResetEmail(
+    to: string,
+    token: string,
+    fullname: string,
+  ): Promise<void> {
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+
+    const html = `
+      <div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px; background: #ffffff; border-radius: 12px; border: 1px solid #e5e7eb;">
+        <h2 style="color: #1f2937; margin-bottom: 8px;">Reset Password</h2>
+        <p style="color: #6b7280; font-size: 15px; line-height: 1.6;">
+          Halo <strong>${fullname}</strong>,
+        </p>
+        <p style="color: #6b7280; font-size: 15px; line-height: 1.6;">
+          Kami menerima permintaan untuk mereset password akun Anda di <strong>Tes Disleksia</strong>. Klik tombol di bawah untuk membuat password baru:
+        </p>
+        <div style="text-align: center; margin: 28px 0;">
+          <a href="${resetUrl}"
+             style="display: inline-block; padding: 12px 32px; background: #2563eb; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+            Reset Password
+          </a>
+        </div>
+        <p style="color: #9ca3af; font-size: 13px; line-height: 1.5;">
+          Link ini berlaku selama <strong>1 jam</strong>. Jika Anda tidak merasa meminta reset password, abaikan email ini — password Anda tidak akan berubah.
+        </p>
+        <hr style="border: none; border-top: 1px solid #f3f4f6; margin: 24px 0;" />
+        <p style="color: #d1d5db; font-size: 12px; text-align: center;">&copy; Tes Disleksia</p>
+      </div>
+    `;
+
+    try {
+      const { error } = await this.resend.emails.send({
+        from: this.fromAddress,
+        to,
+        subject: 'Reset Password — Tes Disleksia',
+        html,
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      this.logger.log(`Password reset email sent to ${to}`);
+    } catch (error) {
+      this.logger.error(`Failed to send password reset email to ${to}`, error);
+      throw error;
+    }
+  }
+
   async sendVerificationEmail(
     to: string,
     token: string,

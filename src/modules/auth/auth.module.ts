@@ -6,6 +6,8 @@ import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
 import { AuthRepository } from './auth.repository';
 import { AuthService } from './auth.service';
+import { PasswordResetAttemptsRepository } from './password-reset-attempts.repository';
+import { PasswordResetRepository } from './password-reset.repository';
 import { PendingUsersRepository } from './pending-users.repository';
 
 @Module({
@@ -30,6 +32,8 @@ import { PendingUsersRepository } from './pending-users.repository';
     AuthService,
     AuthRepository,
     PendingUsersRepository,
+    PasswordResetRepository,
+    PasswordResetAttemptsRepository,
     DatabaseService,
     EmailService,
   ],

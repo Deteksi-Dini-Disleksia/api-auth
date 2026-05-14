@@ -21,4 +21,8 @@ export class UsersService {
   ): Promise<User> {
     return this.usersRepository.create(username, password, fullname, role);
   }
+
+  async updatePassword(user_id: number, hashedPassword: string): Promise<void> {
+    return this.usersRepository.updatePassword(user_id, hashedPassword);
+  }
 }

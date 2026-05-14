@@ -2,8 +2,10 @@ import { Body, Controller, Get, Post, Query, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { ApiResponseUtil } from '../../common/response/api-response';
 import { AuthService } from './auth.service';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -47,5 +49,17 @@ export class AuthController {
   ) {
     const tokens = await this.authService.refresh_token(body.refresh_token);
     return ApiResponseUtil.success(tokens, 'Token refreshed successfully');
+  }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    const result = await this.authService.forgotPassword(dto);
+    return ApiResponseUtil.success(result, result.message);
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    const result = await this.authService.resetPassword(dto);
+    return ApiResponseUtil.success(result, result.message);
   }
 }

@@ -55,4 +55,15 @@ export class UsersRepository {
       throw translateDatabaseError(error);
     }
   }
+
+  async updatePassword(user_id: number, hashedPassword: string): Promise<void> {
+    try {
+      await this.db.query(
+        'UPDATE users SET password = $1 WHERE user_id = $2',
+        [hashedPassword, user_id],
+      );
+    } catch (error) {
+      throw translateDatabaseError(error);
+    }
+  }
 }
